@@ -9,8 +9,7 @@ pipeline {
     }
 
     stages {
-
-        // 1. Checkout source code from GitHub
+        // 1. Checkout source code
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -52,10 +51,26 @@ pipeline {
             }
         }
 
-        // 5. Push Docker Image to Docker Hub
+        // 5. Push Docker Image
         stage('Push to DockerHub') {
             steps {
-                sh 'docker push "$FULL_IMAGE"'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'DOCKERHUB_ID',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        echo "$DOCKER_PASS" | docker login \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
+
+                        docker push "$FULL_IMAGE"
+                        docker logout
+                    '''
+                }
             }
         }
 
@@ -70,6 +85,7 @@ pipeline {
                     )
                 ]) {
                     sh '''
+                        set -eu
                         set +x
 
                         git config user.email "phanindrakumar61@gmail.com"
