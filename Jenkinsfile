@@ -72,8 +72,8 @@ pipeline {
                     sh '''
                         set +x
 
-                        git config user.email "YOUR_EMAIL"
-                        git config user.name "YOUR_GITHUB_USERNAME"
+                        git config user.email "phanindrakumar61@gmail.com"
+                        git config user.name "phanindra61"
 
                         sed -i "s|image:.*|image: ${FULL_IMAGE}|" \
                             manifests/deployment-service.yaml
