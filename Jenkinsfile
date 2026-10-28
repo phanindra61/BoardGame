@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "phanindra61/board-game"
+        IMAGE_NAME = 'phanindra61/board-game'
         TAG = "${BUILD_NUMBER}"
         FULL_IMAGE = "${IMAGE_NAME}:${TAG}"
     }
@@ -46,7 +46,7 @@ pipeline {
         }
 
         // 4. Build Docker Image
-        stage('Building docker image') {
+        stage('Building Docker image') {
             steps {
                 sh 'docker build -t "$FULL_IMAGE" .'
             }
@@ -72,8 +72,8 @@ pipeline {
                     sh '''
                         set +x
 
-                        git config user.email "apoorvaramesh11@gmail.com"
-                        git config user.name "apoorvaramesh11"
+                        git config user.email "YOUR_EMAIL"
+                        git config user.name "YOUR_GITHUB_USERNAME"
 
                         sed -i "s|image:.*|image: ${FULL_IMAGE}|" \
                             manifests/deployment-service.yaml
