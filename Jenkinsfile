@@ -11,7 +11,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/apoorvaramesh11/BoardGame.git', branch: 'main'
+                git url: 'https://github.com/phanindra61/BoardGame.git'
             }
         }
 
@@ -64,7 +64,7 @@ pipeline {
                     git add manifests/deployment-service.yaml
                     git commit -m "Update image ${FULL_IMAGE}" || echo "No changes"
 
-                    git push https://${GIT_USER}:${GIT_PASS}@github.com/apoorvaramesh11/BoardGame.git HEAD:main
+                    git push https://${GIT_USER}:${GIT_PASS}@github.com/phanindra61/BoardGame.git HEAD:main
                     """
                 }
             }
