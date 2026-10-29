@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: boardgame
-          image: phanindra61/board-game:18
+          image: phanindra61/board-game:19
           imagePullPolicy: Always
           ports:
             - containerPort: 8080 # The port that the container is running on in the cluster
