@@ -1,131 +1,97 @@
-
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven'
+    }
+
     environment {
-        IMAGE_NAME = 'phanindra61/board-game'
+        IMAGE_NAME = "apoorvar12/board-game"
         TAG = "${BUILD_NUMBER}"
         FULL_IMAGE = "${IMAGE_NAME}:${TAG}"
     }
 
     stages {
-        // 1. Checkout source code
+
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/phanindra61/BoardGame.git'
+                git url: 'https://github.com/apoorvaramesh11/BoardGame.git', branch: 'main'
             }
         }
 
-        // 2. Docker Hub Login
+        stage('Check Java') {
+            steps {
+                sh 'java -version'
+                sh 'mvn -version'
+            }
+        }
+
         stage('Docker Login') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'DOCKERHUB_ID',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKERHUB_ID',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
-                        set +x
-                        echo "$DOCKER_PASS" | docker login \
-                            -u "$DOCKER_USER" \
-                            --password-stdin
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                     '''
                 }
             }
         }
 
-        // 3. Build Java Application
         stage('Building application') {
             steps {
                 sh 'mvn clean package'
             }
         }
 
-        // 4. Build Docker Image
-        stage('Building Docker image') {
+        stage('Building docker image') {
             steps {
-                sh 'docker build -t "$FULL_IMAGE" .'
+                sh "docker build -t ${FULL_IMAGE} ."
             }
         }
 
-        // 5. Push Docker Image
-        stage('Push to DockerHub') {
+        stage('Push to dockerhub') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'DOCKERHUB_ID',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    sh '''
-                        set +x
-                        echo "$DOCKER_PASS" | docker login \
-                            -u "$DOCKER_USER" \
-                            --password-stdin
-
-                        docker push "$FULL_IMAGE"
-                        docker logout
-                    '''
-                }
+                sh "docker push ${FULL_IMAGE}"
             }
         }
 
-        // 6. Update Kubernetes Manifest (GitOps)
         stage('Update Git (GitOps)') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'GITHUB_CRED',
-                        usernameVariable: 'GIT_USER',
-                        passwordVariable: 'GIT_PASS'
-                    )
-                ]) {
-                    sh '''
-                        set -eu
-                        set +x
+                withCredentials([usernamePassword(
+                    credentialsId: 'GITHUB_CRED',
+                    usernameVariable: 'GIT_USER',
+                    passwordVariable: 'GIT_PASS'
+                )]) {
 
-                        git config user.email "phanindrakumar61@gmail.com"
-                        git config user.name "phanindra61"
+                    sh """
+                        git config user.email "apoorvaramesh11@gmail.com"
+                        git config user.name "apoorvaramesh11"
 
-                        sed -i "s|image:.*|image: ${FULL_IMAGE}|" \
-                            manifests/deployment-service.yaml
+                        sed -i "s|image:.*|image: ${FULL_IMAGE}|" manifests/deployment-service.yaml
 
                         git add manifests/deployment-service.yaml
+                        git commit -m "Update image ${FULL_IMAGE}" || echo "No changes"
 
-                        if ! git diff --cached --quiet; then
-                            git commit -m "Update image ${FULL_IMAGE}"
-                        else
-                            echo "No changes to commit"
-                        fi
-
-                        AUTH=$(printf '%s:%s' "$GIT_USER" "$GIT_PASS" \
-                            | base64 | tr -d '\\n')
-
-                        git -c http.extraheader="AUTHORIZATION: basic $AUTH" \
-                            push origin HEAD:main
-
-                        unset AUTH
-                    '''
+                        git push https://${GIT_USER}:${GIT_PASS}@github.com/apoorvaramesh11/BoardGame.git HEAD:main
+                    """
                 }
             }
         }
-    }
 
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-
-        failure {
-            echo 'Pipeline failed. Check Jenkins console output.'
-        }
-
-        always {
-            echo 'Pipeline execution finished.'
+        stage('Deploy to Kubernetes') {
+    steps {
+        withEnv(['KUBECONFIG=/var/lib/jenkins/.kube/config']) {
+            sh """
+                kubectl --context kind-devops get nodes
+                kubectl apply -f manifests/deployment-service.yaml
+                kubectl rollout status deployment/boardgame-deployment --timeout=120s
+                kubectl get pods
+            """
+                }
+            }
         }
     }
 }
