@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = "apoorvar12/board-game"
+        IMAGE_NAME = "phanindra61/board-game"
         TAG = "${BUILD_NUMBER}"
         FULL_IMAGE = "${IMAGE_NAME}:${TAG}"
     }
@@ -15,7 +15,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/apoorvaramesh11/BoardGame.git', branch: 'main'
+                git url: 'https://github.com/phanindra61/BoardGame.git', branch: 'main'
             }
         }
 
@@ -67,15 +67,15 @@ pipeline {
                 )]) {
 
                     sh """
-                        git config user.email "apoorvaramesh11@gmail.com"
-                        git config user.name "apoorvaramesh11"
+                        git config user.email "phanindrakumar61@gmail.com"
+                        git config user.name "phanindra61"
 
                         sed -i "s|image:.*|image: ${FULL_IMAGE}|" manifests/deployment-service.yaml
 
                         git add manifests/deployment-service.yaml
                         git commit -m "Update image ${FULL_IMAGE}" || echo "No changes"
 
-                        git push https://${GIT_USER}:${GIT_PASS}@github.com/apoorvaramesh11/BoardGame.git HEAD:main
+                        git push https://${GIT_USER}:${GIT_PASS}@github.com/phanindra61/BoardGame.git HEAD:main
                     """
                 }
             }
